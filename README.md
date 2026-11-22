@@ -3,8 +3,8 @@
 <p align="center">
   <img src="https://img.shields.io/badge/Mata%20Kuliah-Big%20Data-blue.svg?style=for-the-badge&logo=apache" alt="Big Data" />
   <img src="https://img.shields.io/badge/Kelompok-7-green.svg?style=for-the-badge" alt="Kelompok 7" />
-  <img src="https://img.shields.io/badge/Status-Tahap%201%3A%20Gathering%20Data%20%E2%9C%94-brightgreen.svg?style=for-the-badge" alt="Status Gathering" />
-  <img src="https://img.shields.io/badge/Dataset-210%2C528%20Baris%20%7C%2026%20Fitur-orange.svg?style=for-the-badge" alt="Dataset Dimension" />
+  <img src="https://img.shields.io/badge/Status-Tahap%202%3A%20Assessing%20%26%20Cleaning%20%E2%9C%94-brightgreen.svg?style=for-the-badge" alt="Status Assessing & Cleaning" />
+  <img src="https://img.shields.io/badge/Dataset-210%2C528%20Baris%20%7C%2026%20Raw%20%E2%86%92%2024%20Clean-orange.svg?style=for-the-badge" alt="Dataset Dimension" />
   <img src="https://img.shields.io/badge/Lisensi%20Data-CC%20BY%204.0-lightgrey.svg?style=for-the-badge&logo=creativecommons" alt="CC BY 4.0" />
 </p>
 
@@ -38,11 +38,11 @@ Proyek ini bertujuan untuk membangun pipeline analitik dan model prediktif berba
 
 ## 🚦 Status & Kemajuan Proyek Saat Ini
 
-Saat ini repositori berada pada **Milestone 1 (Minggu ke-3): Fiksasi Dataset & Gathering Data**.
+Saat ini repositori telah menyelesaikan **Milestone 1 (Gathering Data)** dan **Milestone 2 (Data Assessing & Data Cleaning)**.
 
 ```
 [x] Tahap 1: Fiksasi Masalah, Pemilihan Endpoint API, & Automated Data Gathering (SELESAI)
-[ ] Tahap 2: Data Assessing & Data Cleaning (Penanganan anomali, standarisasi tipe data, audit variabel)
+[x] Tahap 2: Data Assessing & Data Cleaning (Penanganan anomali, standarisasi tipe data, audit variabel) (SELESAI)
 [ ] Tahap 3: Exploratory Data Analysis (EDA) & Analisis Korelasi Spasiotemporal Iklim Jawa Barat
 [ ] Tahap 4: Feature Engineering & Baseline Predictive Modeling (Regresi Presipitasi & Klasifikasi Cuaca)
 [ ] Tahap 5: Distributed Data Processing & ML Pipeline (Apache Spark / PySpark MLlib)
@@ -50,7 +50,8 @@ Saat ini repositori berada pada **Milestone 1 (Minggu ke-3): Fiksasi Dataset & G
 ```
 
 > [!NOTE]
-> Pada tahap **Gathering**, data mentah dikumpulkan secara apa adanya tanpa manipulasi nilai. Verifikasi integritas dilakukan untuk memastikan tidak ada jam yang terlewat, tidak ada duplikasi data, dan seluruh skema tersimpan utuh dalam format **Apache Parquet** dan **CSV**.
+> - Pada **Tahap 1 (Gathering)**, data mentah dikumpulkan secara apa adanya tanpa manipulasi nilai ke dalam `cuaca-jabar/02_dataset_final/` (26 kolom).
+> - Pada **Tahap 2 (Assessing & Cleaning)**, dilakukan audit multi-dimensi dan pembersihan terukur (penghapusan 3 kolom konstan `province`, `snowfall`, `snow_depth`; rekonsiliasi fisik 41.223 baris `precipitation = rain + showers`; koreksi termodinamika 11 baris `dew_point_2m <= temperature_2m`; imputasi terstratifikasi 34.128 nilai kosong `precipitation_probability`; serta konversi tipe data semantik + penambahan `weather_label` WMO) yang disimpan ke `cuaca-jabar/03_dataset_clean/` (24 kolom bersih, 0 nilai kosong).
 
 ---
 
@@ -60,8 +61,9 @@ Dataset final merupakan hasil agregasi deret waktu per jam dari 12 kota/kabupate
 
 | Parameter | Spesifikasi Teknis |
 |:---|:---|
-| **Penyedia Data** | [Open-Meteo Historical Forecast API](https://open-meteo.com/en/docs/historical-forecast-api) |
-| **Endpoint API** | `https://historical-forecast-api.open-meteo.com/v1/forecast` |
+| **Penyedia Data** | [Open-Meteo Weather API](https://open-meteo.com/en/docs/historical-forecast-api) |
+| **Endpoint Gathering (Historis)** | `https://historical-forecast-api.open-meteo.com/v1/forecast` *(Data Training & Evaluasi 2024–2025)* |
+| **Endpoint Pasangan (Real-Time)** | `https://api.open-meteo.com/v1/forecast` *(Live Current & Forecast untuk Sistem Peringatan Dini)* |
 | **Lisensi Sumber** | Creative Commons Attribution 4.0 International (CC BY 4.0) |
 | **Periode Observasi** | 1 Januari 2024 (00:00 WIB) – 31 Desember 2025 (23:00 WIB) |
 | **Durasi Waktu** | 2 Tahun Penuh (731 hari, termasuk tahun kabisat 2024 = 17.544 jam/kota) |
@@ -71,6 +73,15 @@ Dataset final merupakan hasil agregasi deret waktu per jam dari 12 kota/kabupate
 | **Total Fitur** | **26 kolom** (8 atribut metadata/geospasial + 18 variabel cuaca) |
 | **Integritas Waktu** | **100% Kontinu** (0 jam kosong, 0 baris duplikat pasangan `[city, time]`) |
 | **Format Penyimpanan** | **Apache Parquet** (~3.2 MB, terkompresi Snappy) & **CSV** (~34.2 MB) |
+
+### 🔄 Kesesuaian Konteks Data Historis vs. Real-Time (*Dual-Endpoint Parity*)
+
+Meskipun dataset utama proyek ini diambil dari arsip historis (2024–2025), pemilihan keluarga **Open-Meteo Forecast API** dirancang khusus agar mendukung siklus penuh dari **pelatihan model historis** hingga **peringatan dini *real-time*** tanpa perbedaan skema (*zero train-serve skew*):
+
+| Konteks Penggunaan | Endpoint yang Digunakan | Karakteristik & Jangkauan Waktu | Peran dalam Tahapan Proyek |
+|:---|:---|:---|:---|
+| **Data Historis (*Batch Archive*)** | `historical-forecast-api.open-meteo.com/v1/forecast` | Menyimpan arsip permanen deret waktu per jam masa lalu (2021 s.d. H-1) menggunakan parameter `start_date` dan `end_date`. | **Tahap 1–5:** *Data Gathering* (210.528 baris), *Assessing & Cleaning*, EDA spasiotemporal, serta pelatihan & pengujian model Machine Learning. |
+| **Data Terbaru & Real-Time (*Live Stream*)** | `api.open-meteo.com/v1/forecast` | Menyediakan kondisi cuaca **saat ini (`current`, diperbarui tiap 15 menit)**, *lookback* hingga 92 hari terakhir (`past_days`), serta prakiraan 1–16 hari ke depan (`forecast_days`). | **Tahap 5–6:** *Real-time inference* pada **Dashboard Peringatan Dini Banjir & Agrikultur** menggunakan ke-18 variabel, satuan, dan titik koordinat grid yang **100% identik** dengan dataset historis. |
 
 ---
 
@@ -176,11 +187,12 @@ flowchart TD
 ```text
 big-data-kelompok-7-weather/
 │
-├── Gathering_Data_Cuaca_Jabar_Kelompok7.ipynb  # Notebook pipeline pengumpulan & validasi data
-├── README.md                                  # Dokumentasi komprehensif proyek (berkas ini)
+├── Gathering_Data_Cuaca_Jabar_Kelompok7.ipynb          # Notebook Tahap 1: Pengumpulan & integrasi data mentah
+├── Assessing_Cleaning_Data_Cuaca_Jabar_Kelompok7.ipynb # Notebook Tahap 2: Audit kualitas & pembersihan data
+├── README.md                                           # Dokumentasi komprehensif proyek (berkas ini)
 │
-└── cuaca-jabar/                               # Direktori data utama
-    ├── 01_data_mentah/                        # Berkas checkpoint CSV per kota (12 berkas)
+└── cuaca-jabar/                                        # Direktori data utama
+    ├── 01_data_mentah/                                 # Berkas checkpoint CSV per kota (12 berkas, 23 kolom)
     │   ├── bandung_2024_2025.csv
     │   ├── banjar_2024_2025.csv
     │   ├── bekasi_2024_2025.csv
@@ -194,9 +206,12 @@ big-data-kelompok-7-weather/
     │   ├── sukabumi_2024_2025.csv
     │   └── tasikmalaya_2024_2025.csv
     │
-    └── 02_dataset_final/                       # Dataset gabungan terstandarisasi
-        ├── cuaca_jabar_12kota_2024_2025.csv     # Format CSV (34.2 MB, 210.528 baris)
-        └── cuaca_jabar_12kota_2024_2025.parquet # Format Parquet (3.2 MB, terkompresi)
+    ├── 02_dataset_final/                               # Dataset gabungan hasil Gathering (26 kolom, raw integrated)
+    │   ├── cuaca_jabar_12kota_2024_2025.csv            # Format CSV (34.2 MB, 210.528 baris)
+    │   └── cuaca_jabar_12kota_2024_2025.parquet        # Format Parquet (3.2 MB, terkompresi)
+    │
+    └── 03_dataset_clean/                               # Dataset bersih hasil Assessing & Cleaning (24 kolom, 0 NaN)
+        └── cuaca_jabar_12kota_2024_2025_clean.csv      # Format CSV bersih (34.5 MB, 210.528 baris x 24 kolom)
 ```
 
 ---
@@ -254,8 +269,9 @@ agregat_hujan = (
 print(agregat_hujan)
 ```
 
-### 4. Menjalankan Ulang Pipeline Pengumpulan Data
-Buka notebook [Gathering_Data_Cuaca_Jabar_Kelompok7.ipynb](./Gathering_Data_Cuaca_Jabar_Kelompok7.ipynb) melalui Jupyter Lab atau Google Colab, kemudian jalankan seluruh sel secara berurutan (*Run All*).
+### 4. Menjalankan Ulang Pipeline Pengumpulan & Pembersihan Data
+1. **Tahap 1 (Gathering Data):** Buka notebook [Gathering_Data_Cuaca_Jabar_Kelompok7.ipynb](./Gathering_Data_Cuaca_Jabar_Kelompok7.ipynb) melalui Jupyter Lab atau Google Colab, kemudian jalankan seluruh sel secara berurutan (*Run All*).
+2. **Tahap 2 (Assessing & Cleaning Data):** Buka notebook [Assessing_Cleaning_Data_Cuaca_Jabar_Kelompok7.ipynb](./Assessing_Cleaning_Data_Cuaca_Jabar_Kelompok7.ipynb) untuk menjalankan audit kualitas data multi-dimensi dan menghasilkan dataset bersih di `cuaca-jabar/03_dataset_clean/`.
 
 ---
 
@@ -264,8 +280,8 @@ Buka notebook [Gathering_Data_Cuaca_Jabar_Kelompok7.ipynb](./Gathering_Data_Cuac
 | Tahap | Milestone | Agenda & Deliverables | Status |
 |:---:|:---|:---|:---:|
 | **1** | **Dataset Fixation & Data Gathering** | Penarikan data Open-Meteo per jam (2024–2025), checkpoint per kota, penggabungan tabel, dan verifikasi integritas teknis. | ✅ Selesai |
-| **2** | **Data Assessing & Cleaning** | Audit missing value, pengecekan kolom konstan (snowfall/snow_depth), penyesuaian tipe data kategorik `weather_code`, dan penanganan pencilan (*outliers*). | 🔄 Selanjutnya |
-| **3** | **Exploratory Data Analysis (EDA)** | Analisis tren iklim multivariat, korelasi suhu tanah vs suhu permukaan, disparitas curah hujan pesisir vs pegunungan, visualisasi pola musiman. | ⏳ Terjadwal |
+| **2** | **Data Assessing & Cleaning** | Audit missing value (`precipitation_probability`), penghapusan kolom konstan (`snowfall`, `snow_depth`, `province`), rekonsiliasi fisik `precipitation = rain + showers`, konversi tipe kategorik `weather_code` + `weather_label`, dan evaluasi pencilan (*outliers*). | ✅ Selesai |
+| **3** | **Exploratory Data Analysis (EDA)** | Analisis tren iklim multivariat, korelasi suhu tanah vs suhu permukaan, disparitas curah hujan pesisir vs pegunungan, visualisasi pola musiman. | 🔄 Selanjutnya |
 | **4** | **Feature Engineering & Preprocessing** | Pembuatan lag features waktu (t-1, t-3, t-6 jam), agregasi moving window, pengkodean spasial, serta normalisasi fitur numerik. | ⏳ Terjadwal |
 | **5** | **Big Data ML Modeling (PySpark / Scikit-Learn)** | Pembangunan model prediksi curah hujan ekstrem (Regresi) dan klasifikasi kondisi cuaca ekstrem berbasis distributed computing. | ⏳ Terjadwal |
 | **6** | **Dashboard & Final Reporting** | Pengembangan antarmuka visualisasi interaktif untuk pemantauan peringatan banjir dan panduan agrikultur Jawa Barat. | ⏳ Terjadwal |
