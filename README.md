@@ -164,7 +164,7 @@ flowchart TD
 
 ### Keunggulan Teknis Pipeline:
 1. **Exponential Backoff & Rate Limit Resilience:** Menggunakan `HTTPAdapter` dengan strategi retry terotomasi untuk meredam respons HTTP `429 (Too Many Requests)` dan server error (`500, 502, 503, 504`).
-2. **Atomic Checkpointing:** Setiap kota langsung disimpan sebagai berkas CSV mandiri di [01_data_mentah/](file:///C:/Users/seculab/yogas/big-data-kelompok-7-weather/big-data-kelompok-7-weather/cuaca-jabar/01_data_mentah) sesaat setelah diunduh. Jika koneksi terputus di tengah jalan, proses tidak perlu mengulang dari kota pertama.
+2. **Atomic Checkpointing:** Setiap kota langsung disimpan sebagai berkas CSV mandiri di [01_data_mentah/](./cuaca-jabar/01_data_mentah/) sesaat setelah diunduh. Jika koneksi terputus di tengah jalan, proses tidak perlu mengulang dari kota pertama.
 3. **Dual Storage Architecture:**
    - **Apache Parquet (`.parquet`):** Menggunakan kompresi kolumnar Snappy. Mengurangi beban penyimpanan hingga **~90%** (3.2 MB vs 34.2 MB) dan mempercepat pemrosesan query analitik berbasis memori (PySpark/Polars/DuckDB).
    - **CSV (`.csv`):** Menjamin kompatibilitas lintas platform untuk audit manual dan pemenuhan spesifikasi tugas akademik.
@@ -255,7 +255,7 @@ print(agregat_hujan)
 ```
 
 ### 4. Menjalankan Ulang Pipeline Pengumpulan Data
-Buka notebook [Gathering_Data_Cuaca_Jabar_Kelompok7.ipynb](file:///C:/Users/seculab/yogas/big-data-kelompok-7-weather/big-data-kelompok-7-weather/Gathering_Data_Cuaca_Jabar_Kelompok7.ipynb) melalui Jupyter Lab atau Google Colab, kemudian jalankan seluruh sel secara berurutan (*Run All*).
+Buka notebook [Gathering_Data_Cuaca_Jabar_Kelompok7.ipynb](./Gathering_Data_Cuaca_Jabar_Kelompok7.ipynb) melalui Jupyter Lab atau Google Colab, kemudian jalankan seluruh sel secara berurutan (*Run All*).
 
 ---
 
